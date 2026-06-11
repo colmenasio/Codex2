@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  tomcat-app:
+    build: .
+    container_name: tomcat-gradle-app
+    ports:
+      - "8080:8080"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - CATALINA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9090 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
+    volumes:
+      - ./logs:/usr/local/tomcat/logs
+      - ./conf/server.xml:/usr/local/tomcat/conf/server.xml:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
