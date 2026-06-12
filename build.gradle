@@ -29,6 +29,11 @@ dependencies {
 
     // Util
     implementation 'org.apache.commons:commons-lang3:3.13.0'
+    implementation 'org.yaml:snakeyaml:2.0'
+
+    // Db lmao
+    implementation 'org.apache.derby:derby:10.16.1.1'
+    implementation 'org.apache.derby:derbyclient:10.16.1.1'
 }
 
 war {

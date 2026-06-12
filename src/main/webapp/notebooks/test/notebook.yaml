@@ -1,0 +1,9 @@
+contents:
+  - t: "std_question"
+    title: "Question A"
+    question: "whats 2+2-1 lmao"
+    def_answer: "answer_here"
+  
+  - t: "std_question"
+    title: "fucking magnets"
+    question: "how do they work"

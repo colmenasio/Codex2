@@ -1,4 +1,4 @@
-package com.kor.tomcat.controller;
+package com.kor.tomcat.servlet;
 
 import com.kor.tomcat.service.HelloService;
 
