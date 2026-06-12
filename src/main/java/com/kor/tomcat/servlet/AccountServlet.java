@@ -26,14 +26,14 @@ import java.util.UUID;
 @WebServlet(urlPatterns = { "/login/signup", "/login/signin", "/api/login" })
 public class AccountServlet extends HttpServlet {
 
-    private static final Logger logger = LogManager.getLogger(NotebookServlet.class);
+    private static final Logger logger = LogManager.getLogger(AccountServlet.class);
     private UserSessionService srv;
 
     @Override
     public void init() throws ServletException {
         srv = new UserSessionService();
         getServletContext().setAttribute("userSessionService", srv);
-        logger.info("Initializing NotebookServlet");
+        logger.info("Initializing AccountServlet");
     }
 
     @Override
@@ -45,7 +45,7 @@ public class AccountServlet extends HttpServlet {
         } else if (uri.equals("/login/signin")) {
             req.getRequestDispatcher("/content/login/signin/index.jsp").forward(req, resp);
         } else {
-            resp.sendError(0, "Unknown direction");
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND, "Unknown direction");
         }
     }
 
@@ -119,7 +119,7 @@ public class AccountServlet extends HttpServlet {
 
     @Override
     public void destroy() {
-        logger.info("Destroying NotebookServlet");
+        logger.info("Destroying AccountServlet");
         super.destroy();
     }
 }
