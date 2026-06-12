@@ -13,7 +13,48 @@ form.addEventListener('submit', async (e) => {
     // Disable button to prevent double submission
     const submitBtn = form.querySelector('.primary-btn');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Signing in...';
+    submitBtn.textContent = 'Signing up...';
+
+    // Sign up request
+    const payload_signup = {
+        action: "signup",
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+    };
+
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload_signup)
+        });
+
+        if (!response.ok) {
+            // Non-success response or missing token
+            throw new Error('Unknown error');
+        }
+
+        const data = await response.json().catch(() => ({}));
+
+        if (data.ok !== true) {
+            throw new Error(data.error_msg == undefined ? "Unknown error" : data.error_msg);
+        }
+
+        console.log('Sign up successful');
+
+    } catch (error) {
+        // Display error message
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign up';
+        return;
+    }
 
     // Sign in request
     const payload = {
@@ -55,6 +96,7 @@ form.addEventListener('submit', async (e) => {
 
         // Re-enable button
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign in';
+        submitBtn.textContent = 'Sign up';
     }
+
 });

@@ -1,7 +1,9 @@
 package com.kor.tomcat.filter;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.io.IOException;
+import java.security.cert.TrustAnchor;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -12,11 +14,21 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
-import java.io.IOException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @WebFilter(urlPatterns = {"/*"})
 public class AuthFilter implements Filter {
+
+    //private static final String LOGIN_PAGE = "content/login/signin/index.jsp";
+    private static final String LOGIN_PAGE = "/login/signin";
+    private static final ArrayList<String> ALLOWED_UNLOGGED = new ArrayList<>(Arrays.asList(
+        "/login",
+        "/api",
+        "/content/login"
+    ));
 
     private static final Logger logger = LogManager.getLogger(AuthFilter.class);
 
@@ -26,31 +38,34 @@ public class AuthFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response,
+    public void doFilter(ServletRequest request, ServletResponse response, 
                          FilterChain chain) throws IOException, ServletException {
-        chain.doFilter(request, response);
-        return;
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        HttpSession session = httpRequest.getSession(false);
+        
+        String requestURI = httpRequest.getRequestURI();
+        String contextPath = httpRequest.getContextPath();
+        String path = requestURI.substring(contextPath.length());
+        
+        boolean isAllowedFreely = false;
+        for(int i = 0; i < ALLOWED_UNLOGGED.size(); i++){
+            if(path.startsWith(ALLOWED_UNLOGGED.get(i))){
+                isAllowedFreely = true;
+                break;
+            };
+        }
+        
+        boolean isAuthenticated = (session != null && session.getAttribute("authToken") != null);
+        
+        //logger.info("Filtering {} request. Is Allowed Sessionless {}. Has Session {}", path, isAllowedFreely, isAuthenticated);
 
-        //HttpServletRequest httpReq = (HttpServletRequest) request;
-        //HttpServletResponse httpResp = (HttpServletResponse) response;
-//
-        //logger.debug("Processing request: {} {}", httpReq.getMethod(), httpReq.getRequestURI());
-//
-        //httpResp.setHeader("X-Content-Type-Options", "nosniff");
-        //httpResp.setHeader("X-Frame-Options", "DENY");
-//
-        //String path = httpReq.getRequestURI();
-        //if (path.startsWith("/api/")) {
-            //String apiKey = httpReq.getHeader("X-API-Key");
-            //if (apiKey == null || !apiKey.equals("test-key-123")) {
-                //httpResp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid API Key");
-                //return;
-            //}
-        //}
-//
-        //chain.doFilter(request, response);
+        if (isAllowedFreely || isAuthenticated) {
+            chain.doFilter(request, response);
+        } else {
+            httpResponse.sendRedirect(contextPath + LOGIN_PAGE);
+        }
     }
-
     @Override
     public void destroy() {
         logger.info("AuthFilter destroyed");

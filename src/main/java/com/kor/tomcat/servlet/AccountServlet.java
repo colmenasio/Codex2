@@ -8,6 +8,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,9 +19,11 @@ import com.kor.tomcat.service.user_session_service.UserSessionService;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonWriter;
+import java.util.UUID;
 
-@WebServlet(urlPatterns = { "/login/signup", "/login/signin", "/api/login"})
+@WebServlet(urlPatterns = { "/login/signup", "/login/signin", "/api/login" })
 public class AccountServlet extends HttpServlet {
 
     private static final Logger logger = LogManager.getLogger(NotebookServlet.class);
@@ -50,10 +53,9 @@ public class AccountServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         String uri = req.getRequestURI();
-        if(!uri.matches("/api/login")) {
+        if (!uri.matches("/api/login")) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
-        logger.info("sc 0");
 
         resp.setContentType("application/json");
 
@@ -61,48 +63,54 @@ public class AccountServlet extends HttpServlet {
         String action;
         String username;
         String password;
-        try{
+        try {
             action = req_json.getString("action");
             username = req_json.getString("username");
             password = req_json.getString("password");
-        } catch(Exception e){
+        } catch (Exception e) {
             fillApiResponse(resp.getWriter(), false, "Request Format Error", "");
             return;
         }
 
-        logger.info("action is:");
-        logger.info(action);
-        if(action.matches("signin")){
-            Result<String, UserSessionService.LoginErr> result = srv.login(username, password);
-            if(result.isOk()){
-                fillApiResponse(resp.getWriter(), true, "", result.ok().get());
-                return;
-            } else {
-                logger.info("ts should be displaying");
-                fillApiResponse(resp.getWriter(), false, result.err().get().toString(), "");
-                return;
-            }
-        }
-        logger.info("sc 1:");
+        if (action.matches("signin")) {
+            Result<UserSessionService.AuthOk, UserSessionService.AuthErr> result = srv.authenticate(username, password);
 
-        if(action.matches("signup")){
-            Result<UserEntry, UserSessionService.AccountCreationErr> result = srv.createAccount(username, password);
-            if(result.isOk()){
-                fillApiResponse(resp.getWriter(), true, "", "");
+            if (result.isOk()) {
+                String auth_token = UUID.randomUUID().toString();
+                HttpSession session = req.getSession();
+                session.setAttribute("authToken", auth_token);
+                session.setAttribute("user_id", result.ok().get().user.id);
+                session.setMaxInactiveInterval(30 * 60);
+                fillApiResponse(resp.getWriter(), true, null, auth_token);
                 return;
             } else {
-                fillApiResponse(resp.getWriter(), false, result.err().get().toString(), "");
+                fillApiResponse(resp.getWriter(), false, result.err().get().toString(), null);
                 return;
             }
         }
-        logger.info("sc 2");
+
+        if (action.matches("signup")) {
+            Result<UserEntry, UserSessionService.AccountCreationErr> result = srv.createAccount(username, password);
+            if (result.isOk()) {
+                fillApiResponse(resp.getWriter(), true, null, null);
+                return;
+            } else {
+                fillApiResponse(resp.getWriter(), false, result.err().get().toString(), null);
+                return;
+            }
+        }
     }
 
-    private void fillApiResponse(PrintWriter writer, boolean success, String error_msg, String token){
-        JsonObject jsonResponse = Json.createObjectBuilder()
-                .add("ok", success)
-                .add("error_msg", error_msg)
-                .build();
+    private void fillApiResponse(PrintWriter writer, boolean success, String error_msg, String token) {
+        JsonObjectBuilder builder = Json.createObjectBuilder()
+                .add("ok", success);
+        if (token != null) {
+            builder.add("token", token);
+        }
+        if (error_msg != null) {
+            builder.add("error_msg", error_msg);
+        }
+        JsonObject jsonResponse = builder.build();
 
         try (JsonWriter jsonWriter = Json.createWriter(writer)) {
             jsonWriter.writeObject(jsonResponse);

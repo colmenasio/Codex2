@@ -6,12 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DerbyUserSessionStorage implements IUserSessionStorage {
     private static final String DB_URL = "jdbc:derby:userdb;create=true";
-    private final ConcurrentHashMap<String, String> sessionMap = new ConcurrentHashMap<>(); // sessionId -> userId
+    //private final ConcurrentHashMap<String, String> sessionMap = new ConcurrentHashMap<>(); // sessionId -> userId
     
     public DerbyUserSessionStorage() {
         System.setProperty("derby.stream.error.file", "/dev/null");
@@ -98,38 +96,38 @@ public class DerbyUserSessionStorage implements IUserSessionStorage {
         return null;
     }
     
-    @Override
-    public String createOrGetSession(Long user_id) {
-        // Check if session already exists for this user
-        for (java.util.Map.Entry<String, String> entry : sessionMap.entrySet()) {
-            if (entry.getValue().equals(String.valueOf(user_id))) {
-                return entry.getKey();
-            }
-        }
+    // @Override
+    // public String createOrGetSession(Long user_id) {
+    //     // Check if session already exists for this user
+    //     for (java.util.Map.Entry<String, String> entry : sessionMap.entrySet()) {
+    //         if (entry.getValue().equals(String.valueOf(user_id))) {
+    //             return entry.getKey();
+    //         }
+    //     }
         
-        // Create new session
-        String sessionId = UUID.randomUUID().toString();
-        sessionMap.put(sessionId, String.valueOf(user_id));
-        return sessionId;
-    }
+    //     // Create new session
+    //     String sessionId = UUID.randomUUID().toString();
+    //     sessionMap.put(sessionId, String.valueOf(user_id));
+    //     return sessionId;
+    // }
     
-    @Override
-    public UserData getSessionUserData(String session_id) {
-        String userId = sessionMap.get(session_id);
-        if (userId == null) {
-            return null;
-        }
+    // @Override
+    // public UserData getSessionUserData(String session_id) {
+    //     String userId = sessionMap.get(session_id);
+    //     if (userId == null) {
+    //         return null;
+    //     }
         
-        UserEntry entry = getUserById(Long.parseLong(userId));
-        return entry != null ? entry.data : null;
-    }
+    //     UserEntry entry = getUserById(Long.parseLong(userId));
+    //     return entry != null ? entry.data : null;
+    // }
     
     private UserEntry extractUserEntry(ResultSet rs) throws SQLException {
-        UserEntry entry = new UserEntry();
-        entry.id = rs.getLong("id");
-        entry.data = new UserData();
-        entry.data.username = rs.getString("username");
-        entry.data.pwd_hash = rs.getString("pwd_hash");
-        return entry;
-    }
+         UserEntry entry = new UserEntry();
+         entry.id = rs.getLong("id");
+         entry.data = new UserData();
+         entry.data.username = rs.getString("username");
+         entry.data.pwd_hash = rs.getString("pwd_hash");
+         return entry;
+     }
 } 
