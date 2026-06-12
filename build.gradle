@@ -32,12 +32,16 @@ dependencies {
     implementation 'org.yaml:snakeyaml:2.0'
 
     // Db lmao
-    implementation 'org.apache.derby:derby:10.16.1.1'
-    implementation 'org.apache.derby:derbyclient:10.16.1.1'
+    implementation 'org.apache.derby:derby:10.14.2.0'
 }
 
 war {
     archiveBaseName = 'app'
+
+    //from {
+    //    configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    //}
+
     manifest {
         attributes(
             'Implementation-Title': 'Proyecto Sistemas Distribuidos',

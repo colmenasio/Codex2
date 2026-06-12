@@ -14,6 +14,7 @@ public class DerbyUserSessionStorage implements IUserSessionStorage {
     private final ConcurrentHashMap<String, String> sessionMap = new ConcurrentHashMap<>(); // sessionId -> userId
     
     public DerbyUserSessionStorage() {
+        System.setProperty("derby.stream.error.file", "/dev/null");
         initializeDatabase();
     }
     
