@@ -23,10 +23,13 @@ public class AuthFilter implements Filter {
 
     //private static final String LOGIN_PAGE = "content/login/signin/index.jsp";
     private static final String LOGIN_PAGE = "/login/signin";
-    private static final ArrayList<String> ALLOWED_UNLOGGED = new ArrayList<>(Arrays.asList(
+    private static final ArrayList<String> ALLOWED_UNLOGGED_PREFIX = new ArrayList<>(Arrays.asList(
         "/login",
         "/api",
         "/content/login"
+    ));
+    private static final ArrayList<String> ALLOWED_UNLOGGED = new ArrayList<>(Arrays.asList(
+        "/favicon.ico"
     ));
 
     private static final Logger logger = LogManager.getLogger(AuthFilter.class);
@@ -47,14 +50,7 @@ public class AuthFilter implements Filter {
         String contextPath = httpRequest.getContextPath();
         String path = requestURI.substring(contextPath.length());
         
-        boolean isAllowedFreely = false;
-        for(int i = 0; i < ALLOWED_UNLOGGED.size(); i++){
-            if(path.startsWith(ALLOWED_UNLOGGED.get(i))){
-                isAllowedFreely = true;
-                break;
-            };
-        }
-
+        boolean isAllowedFreely = isAllowedWithoutLogin(path);
         boolean isAuthenticated = (session != null && session.getAttribute("authToken") != null);
         
         //logger.info("Filtering {} request. Is Allowed Sessionless {}. Has Session {}", path, isAllowedFreely, isAuthenticated);
@@ -65,6 +61,23 @@ public class AuthFilter implements Filter {
             httpResponse.sendRedirect(contextPath + LOGIN_PAGE);
         }
     }
+
+
+    private boolean isAllowedWithoutLogin(String uri){
+
+        for(int i = 0; i < ALLOWED_UNLOGGED_PREFIX.size(); i++){
+            if(uri.startsWith(ALLOWED_UNLOGGED_PREFIX.get(i))){
+                return true;
+            };
+        }
+        for(int i = 0; i < ALLOWED_UNLOGGED.size(); i++){
+            if(uri.equals(ALLOWED_UNLOGGED.get(i))){
+                return true;
+            };
+        }
+        return false;
+    }
+
     @Override
     public void destroy() {
         logger.info("AuthFilter destroyed");

@@ -111,7 +111,11 @@ public class AccountServlet extends HttpServlet {
 
         if (result.isOk()) {
             String auth_token = UUID.randomUUID().toString();
-            HttpSession session = req.getSession();
+            HttpSession session = req.getSession(false);
+            if(session!= null){
+                session.invalidate();
+            }
+            session = req.getSession();
             session.setAttribute("authToken", auth_token);
             session.setAttribute("userId", result.ok().get().user.id);
             session.setMaxInactiveInterval(30 * 60);
