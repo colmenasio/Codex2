@@ -57,46 +57,95 @@ public class AccountServlet extends HttpServlet {
         }
 
         resp.setContentType("application/json");
-
         JsonObject req_json = Json.createReader(req.getReader()).readObject();
-        String action;
-        String username;
-        String password;
-        try {
-            action = req_json.getString("action");
-            username = req_json.getString("username");
-            password = req_json.getString("password");
-        } catch (Exception e) {
+        String action = req_json.getString("action", null);
+        if (action == null) {
             fillApiResponse(resp.getWriter(), false, "Request Format Error", "");
             return;
         }
 
         if (action.matches("signin")) {
-            Result<UserSessionService.AuthOk, UserSessionService.AuthErr> result = srv.authenticate(username, password);
+            hanldeSignIn(req, resp, req_json);
+        } else if (action.matches("signup")) {
+            hanldeSignUp(req, resp, req_json);
+        } else if (action.matches("logout")) {
+            hanldeLogout(req, resp, req_json);
+        }
+    }
 
-            if (result.isOk()) {
-                String auth_token = UUID.randomUUID().toString();
-                HttpSession session = req.getSession();
-                session.setAttribute("authToken", auth_token);
-                session.setAttribute("userId", result.ok().get().user.id);
-                session.setMaxInactiveInterval(30 * 60);
-                fillApiResponse(resp.getWriter(), true, null, auth_token);
-                return;
-            } else {
-                fillApiResponse(resp.getWriter(), false, result.err().get().toString(), null);
-                return;
-            }
+    private void hanldeSignUp(HttpServletRequest req, HttpServletResponse resp, JsonObject req_json)
+            throws ServletException, IOException {
+        String username;
+        String password;
+        try {
+            username = req_json.getString("username");
+            password = req_json.getString("password");
+        } catch (Exception e) {
+            fillApiResponse(resp.getWriter(), false, "Request Format Error", null);
+            return;
         }
 
-        if (action.matches("signup")) {
-            Result<UserEntry, UserSessionService.AccountCreationErr> result = srv.createAccount(username, password);
-            if (result.isOk()) {
-                fillApiResponse(resp.getWriter(), true, null, null);
-                return;
-            } else {
-                fillApiResponse(resp.getWriter(), false, result.err().get().toString(), null);
-                return;
-            }
+        Result<UserEntry, UserSessionService.AccountCreationErr> result = srv.createAccount(username, password);
+        if (result.isOk()) {
+            fillApiResponse(resp.getWriter(), true, null, null);
+            return;
+        } else {
+            fillApiResponse(resp.getWriter(), false, result.err().get().toString(), null);
+            return;
+        }
+    }
+
+    private void hanldeSignIn(HttpServletRequest req, HttpServletResponse resp, JsonObject req_json)
+            throws ServletException, IOException {
+        String username;
+        String password;
+        try {
+            username = req_json.getString("username");
+            password = req_json.getString("password");
+        } catch (Exception e) {
+            fillApiResponse(resp.getWriter(), false, "Request Format Error", null);
+            return;
+        }
+
+        Result<UserSessionService.AuthOk, UserSessionService.AuthErr> result = srv.authenticate(username, password);
+
+        if (result.isOk()) {
+            String auth_token = UUID.randomUUID().toString();
+            HttpSession session = req.getSession();
+            session.setAttribute("authToken", auth_token);
+            session.setAttribute("userId", result.ok().get().user.id);
+            session.setMaxInactiveInterval(30 * 60);
+            fillApiResponse(resp.getWriter(), true, null, auth_token);
+            return;
+        } else {
+            fillApiResponse(resp.getWriter(), false, result.err().get().toString(), null);
+            return;
+        }
+    }
+
+    private void hanldeLogout(HttpServletRequest req, HttpServletResponse resp, JsonObject req_json)
+            throws ServletException, IOException {
+        String auth_token;
+        try {
+            auth_token = req_json.getString("authToken");
+        } catch (Exception e) {
+            fillApiResponse(resp.getWriter(), false, "Request Format Error", null);
+            return;
+        }
+        
+        HttpSession session = req.getSession(false);
+        if(session == null){
+            fillApiResponse(resp.getWriter(), false, "Unknown session", null);
+            return;
+        }
+        String session_auth_token = (String)session.getAttribute("authToken");
+        if(session_auth_token.equals(auth_token)){
+            session.invalidate();
+            fillApiResponse(resp.getWriter(), true, null, null);
+            return;
+        } else {
+            fillApiResponse(resp.getWriter(), false, "Auth error", null);
+            return;
         }
     }
 

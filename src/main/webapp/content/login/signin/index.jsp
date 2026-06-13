@@ -25,7 +25,7 @@
                     <p class="lead">Sign in with a username and password to continue.</p>
                 </header>
 
-                <form class="login-form" id="loginForm", onsubmit="return false">
+                <form class="login-form" id="loginForm" , onsubmit="return false">
                     <label class="field-label" for="username">Username</label>
                     <input id="username" name="username" type="text" placeholder="Enter your username"
                         autocomplete="username" required>

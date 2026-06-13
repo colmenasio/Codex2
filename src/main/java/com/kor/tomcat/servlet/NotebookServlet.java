@@ -5,8 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.kor.common.Result;
 import com.kor.tomcat.service.notebook.NotebookService;
-import com.kor.tomcat.service.notebook.question.IQuestion;
-import com.kor.tomcat.service.notebook.question.OpenQuestion;
+import com.kor.tomcat.service.notebook.deserialization.YamlNotebookRoot;
+import com.kor.tomcat.service.user_session_service.UserSessionService;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,19 +15,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @WebServlet(urlPatterns = { "/notebook/*"})
 public class NotebookServlet extends HttpServlet {
 
     private static final Logger logger = LogManager.getLogger(NotebookServlet.class);
-    private NotebookService srv;
+    private NotebookService nb_srv;
+    private UserSessionService usr_srv;
 
     @Override
     public void init() throws ServletException {
         logger.info("Initializing NotebookServlet");
-        this.srv = (NotebookService) this.getServletContext().getAttribute("notebookService");
+        this.nb_srv = (NotebookService) this.getServletContext().getAttribute("notebookService");
+        this.usr_srv = (UserSessionService) this.getServletContext().getAttribute("userSessionService");
     }
 
     @Override
@@ -43,18 +43,22 @@ public class NotebookServlet extends HttpServlet {
         String notebook_path = uri.substring(prefix.length());
         logger.info("Getting notebook: {}", notebook_path);
 
-        Result<ArrayList<IQuestion>, String> questions_r = srv.getQuestions(notebook_path);
-        if(questions_r.isErr()){
-            logger.error(questions_r.err().get());
+        Result<YamlNotebookRoot, String> notebook = nb_srv.getNotebook(notebook_path);
+        if(notebook.isErr()){
+            logger.error(notebook.err().get());
             resp.sendError(3, "Unexpected Error lmau");
             return;
         }
-        ArrayList<IQuestion> questions = questions_r.ok().get();
+        YamlNotebookRoot notebook_unwrapped = notebook.ok().get();
+        Long user_id = (Long) req.getSession().getAttribute("userId");
+        String current_user = usr_srv.getUserDataById(user_id).data.username;
 
-        logger.info("Sending {} questions", questions.size());
-        //resp.getWriter().println("<html><body>placeholder_meow<body></html>");
-        req.setAttribute("questions", questions);
-        req.getRequestDispatcher("/content/notebook/notebook.jsp").forward(req, resp);
+        logger.info("Sending {} questions", notebook_unwrapped.contents.size());
+
+        req.setAttribute("notebooks", notebook_unwrapped.name);
+        req.setAttribute("currentUser", current_user);
+        req.setAttribute("questions", notebook_unwrapped.contents);
+        req.getRequestDispatcher("/content/notebook/index.jsp").forward(req, resp);
     }
 
     @Override

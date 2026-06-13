@@ -105,18 +105,29 @@
 </div>
 
 <script>
-    // Same logout handler behavior as the original notebook page (for consistency)
-    function handleLogout() {
-        // In a real app, you'd invalidate session or redirect to login.
-        // For demo purposes, we show an alert and simulate redirect (optional)
-        if (confirm("Are you sure you want to logout?")) {
-            // Example redirect to login page (adjust URL as needed)
-            // window.location.href = "/login";
-            alert("Logged out successfully. (Demo action)");
-            // You could uncomment the line below to simulate logout redirect:
-            // window.location.href = "/index.jsp";
+// Handle logout
+async function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        const payload = {
+            action: "logout",
+            authToken: localStorage.getItem("authToken"),
+        };
+
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            window.location.href = '/login/signin';
+        } catch (e) {
+
         }
     }
+}
 </script>
 
 </body>

@@ -44,7 +44,7 @@ public class NotebookService {
         return Result.err("");
     }
 
-    private Result<YamlNotebookRoot, String> getNotebook(String notebook_path){
+    public Result<YamlNotebookRoot, String> getNotebook(String notebook_path){
         String nb_yaml_path = nb_db_path.concat(notebook_path).concat("/notebook.yaml");
 
         YamlNotebookRoot data;
