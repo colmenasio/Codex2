@@ -124,9 +124,9 @@ public class UserSessionService {
     //    return user_db.getSessionUserData(token);
     //}
 
-    //public UserEntry getUserDataById(Long user_id) {
-    //    return user_db.getUserById(user_id);
-    //}
+    public UserEntry getUserDataById(Long user_id) {
+        return user_db.getUserById(user_id);
+    }
 
 
 

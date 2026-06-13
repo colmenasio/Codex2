@@ -5,7 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.kor.common.Result;
 import com.kor.tomcat.service.notebook.NotebookService;
-import com.kor.tomcat.service.notebook.Question;
+import com.kor.tomcat.service.notebook.question.IQuestion;
+import com.kor.tomcat.service.notebook.question.OpenQuestion;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -26,7 +27,7 @@ public class NotebookServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         logger.info("Initializing NotebookServlet");
-        srv = new NotebookService(this.getServletContext().getRealPath("notebooks"));
+        this.srv = (NotebookService) this.getServletContext().getAttribute("notebookService");
     }
 
     @Override
@@ -42,13 +43,13 @@ public class NotebookServlet extends HttpServlet {
         String notebook_path = uri.substring(prefix.length());
         logger.info("Getting notebook: {}", notebook_path);
 
-        Result<ArrayList<Question>, String> questions_r = srv.getQuestions(notebook_path);
+        Result<ArrayList<IQuestion>, String> questions_r = srv.getQuestions(notebook_path);
         if(questions_r.isErr()){
             logger.error(questions_r.err().get());
             resp.sendError(3, "Unexpected Error lmau");
             return;
         }
-        List<Question> questions = (List<Question>)questions_r.ok().get();
+        ArrayList<IQuestion> questions = questions_r.ok().get();
 
         logger.info("Sending {} questions", questions.size());
         //resp.getWriter().println("<html><body>placeholder_meow<body></html>");

@@ -1,4 +1,4 @@
-<%@ page import="com.kor.tomcat.service.notebook.Question" %>
+<%@ page import="com.kor.tomcat.service.notebook.question.IQuestion" %>
 <%@ page import="java.util.List" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Codex2 - Cause if codex is so good then why dont the make codex 2 huh??</title>
+    <title>Codex2 - Notebook</title>
     <link rel="stylesheet" href="/content/notebook/notebook.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
@@ -16,7 +16,7 @@
     // Lmao todo fix this shite
     String currentUser = "John Codex";
     
-    List<Question> questions = (List<Question>) request.getAttribute("questions");
+    List<IQuestion> questions = (List<IQuestion>) request.getAttribute("questions");
     if (questions == null) {
         questions = java.util.Arrays.asList();
     }
@@ -28,7 +28,7 @@
         <div class="logo-section">
             <div class="app-icon">C²</div>
             <h1 class="app-name">Codex2</h1>
-            <span class="app-tagline">"if codex is so good why dont they make codex 2 lmao"</span>
+            <span class="app-tagline">if codex is so good why dont they make codex 2 lmao</span>
         </div>
         <div class="user-section">
             <div class="user-avatar">
@@ -56,9 +56,9 @@
             <div class="questions-container">
                 <%
                     int index = 0;
-                    for (Question q : questions) {
+                    for (IQuestion q : questions) {
                         String questionId = "q" + index;
-                        String defaultAnswer = (q.default_answer != null) ? q.default_answer : "";
+                        String defaultAnswer = (q.default_answer != null) ? q.getDefaultAnswer() : "";
                 %>
                 <div class="question-card" data-question-id="<%= questionId %>">
                     <div class="question-header">
@@ -67,11 +67,11 @@
                     </div>
                     
                     <div class="question-title">
-                        <h3><%= escapeHtml(q.title) %></h3>
+                        <h3><%= escapeHtml(q.getTitle()) %></h3>
                     </div>
                     
                     <div class="question-body">
-                        <p class="question-text"><%= escapeHtml(q.question) %></p>
+                        <p class="question-text"><%= escapeHtml(q.getQuestion()) %></p>
                         
                         <div class="answer-section">
                             <label for="<%= questionId %>" class="answer-label">

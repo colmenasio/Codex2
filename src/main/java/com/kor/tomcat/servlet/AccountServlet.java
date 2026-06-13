@@ -31,9 +31,8 @@ public class AccountServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        srv = new UserSessionService();
-        getServletContext().setAttribute("userSessionService", srv);
         logger.info("Initializing AccountServlet");
+        this.srv = (UserSessionService) this.getServletContext().getAttribute("userSessionService");
     }
 
     @Override
@@ -79,7 +78,7 @@ public class AccountServlet extends HttpServlet {
                 String auth_token = UUID.randomUUID().toString();
                 HttpSession session = req.getSession();
                 session.setAttribute("authToken", auth_token);
-                session.setAttribute("user_id", result.ok().get().user.id);
+                session.setAttribute("userId", result.ok().get().user.id);
                 session.setMaxInactiveInterval(30 * 60);
                 fillApiResponse(resp.getWriter(), true, null, auth_token);
                 return;

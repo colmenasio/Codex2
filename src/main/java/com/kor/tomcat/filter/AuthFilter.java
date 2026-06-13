@@ -54,7 +54,7 @@ public class AuthFilter implements Filter {
                 break;
             };
         }
-        
+
         boolean isAuthenticated = (session != null && session.getAttribute("authToken") != null);
         
         //logger.info("Filtering {} request. Is Allowed Sessionless {}. Has Session {}", path, isAllowedFreely, isAuthenticated);
