@@ -46,7 +46,6 @@ public class DerbyStorage implements IUserSessionStorage, INotebookUserAnswerSto
                     "answer_data_json LONG VARCHAR NOT NULL)");
 
         } catch (SQLException e) {
-            System.err.println(e.getSQLState().equals("X0Y32"));
             if (!e.getSQLState().equals("X0Y32")) { // Table already exists
                 e.printStackTrace();
             }
