@@ -1,82 +1,69 @@
 package com.kor.tomcat.service.notebook;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-
 import com.kor.common.Result;
-import com.kor.tomcat.service.notebook.deserialization.YamlNotebookConstructor;
 import com.kor.tomcat.service.notebook.deserialization.YamlNotebookRoot;
 import com.kor.tomcat.service.notebook.question.IQuestion;
+import com.kor.tomcat.service.user_session_service.INotebookUserAnswerStorage;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
 
 public class NotebookService {
+    private final YamlNotebookDb notebook_db;
+    private final INotebookUserAnswerStorage answer_db;
 
-    private final String nb_db_path;
-
-    public NotebookService(String notebook_db_path){
-        nb_db_path = notebook_db_path;
+    public NotebookService(YamlNotebookDb notebook_storage, INotebookUserAnswerStorage answer_storage) {
+        notebook_db = notebook_storage;
+        answer_db = answer_storage;
     }
 
-    public Result<ArrayList<IQuestion>, String> getQuestions(String notebook_path){
-        Result<YamlNotebookRoot, String> notebook_r = this.getNotebook(notebook_path);
-        if(notebook_r.isErr()){return Result.err(notebook_r.err().get());}
-        YamlNotebookRoot data = notebook_r.ok().get();
-
-        ArrayList<IQuestion> questions = data.contents;
-        return Result.ok(questions);
+    public YamlNotebookDb getNotebookDb() {
+        return notebook_db;
     }
 
-    /* 
-    Err() If IO Erro occured
-    Ok(Ok()) If the answer was correct
-    Ok(Err()) If the answer was wrong
-    */
-    class AnswerVerificacionOK {
-        public Result<IQuestion.AnswerRight, IQuestion.AnswerWrong> correction;
-    }
-
-    public Result<AnswerVerificacionOK, String> verifyAnswer(String notebook_path, int question, String answer){
-        return Result.err("");
-    }
-
-    public Result<YamlNotebookRoot, String> getNotebook(String notebook_path){
-        String nb_yaml_path = nb_db_path.concat(notebook_path).concat("/notebook.yaml");
-
-        YamlNotebookRoot data;
-        try(InputStream inputStream = new FileInputStream(nb_yaml_path);){
-            Yaml yaml = new Yaml(new YamlNotebookConstructor(new LoaderOptions()));
-            data = yaml.load(inputStream);
-            System.out.println(data.name);
-            System.out.println(data.contents.size());
-        } catch (Exception e) {
-            System.err.println(e);
-            return Result.err(e.toString());
+    public Result<Result<IQuestion.AnswerRight, IQuestion.AnswerWrong>, String> correctAndStoreUserAnswer(Long user_id,
+            String notebook_id, int question_id, String answer) {
+        Result<YamlNotebookRoot, String> notebook_read = notebook_db.getNotebook(notebook_id);
+        if (notebook_read.isErr()) {
+            return Result.err(notebook_read.err().get());
+        }
+        YamlNotebookRoot notebook = notebook_read.ok().get();
+        if (notebook.contents.size() <= question_id) {
+            return Result.err("Unknown question index");
         }
 
-        return Result.ok(data);
+        IQuestion question = notebook.contents.get(question_id);
+        Result<IQuestion.AnswerRight, IQuestion.AnswerWrong> correction_result = question.checkAnswer(answer);
+
+        JsonObject user_answers = answer_db.getAnswerData(notebook_id, user_id);
+        JsonObjectBuilder builder;
+
+        if (user_answers == null) {
+            builder = Json.createObjectBuilder();
+        } else {
+            builder = Json.createObjectBuilder(user_answers);
+        }
+
+        builder.add(
+                "" + question_id,
+                Json.createObjectBuilder()
+                        .add("is_correct", correction_result.isOk())
+                        .add("raw_answer", answer)
+                        .build());
+
+        user_answers = builder.build();
+        answer_db.saveAnswerData(notebook_id, user_id, user_answers);
+
+        return Result.ok(correction_result);
     }
 
-    public ArrayList<NotebookListing> listNotebooks(){ 
-        File[] directories = new File(nb_db_path).listFiles(File::isDirectory);
-        ArrayList<NotebookListing> ret = new ArrayList<>();
-        for (File file : directories) {
-            String path = "/" + file.getName();
-            Result<YamlNotebookRoot, String> res = getNotebook(path);
-            if(res.isErr()){
-                continue;
-            }
+    public JsonObject getUserAnswerData(Long user_id, String notebook_id) {
+        JsonObject ret = answer_db.getAnswerData(notebook_id, user_id);
+        return ret != null ? ret : Json.createObjectBuilder().build();
+    }
 
-            NotebookListing new_listing = new NotebookListing();
-            new_listing.name = res.ok().get().name;
-            new_listing.url = "/notebook" + path;
-
-            ret.add(new_listing);
-        }
-        return ret;
+    public void removeUserAnswerData(Long user_id, String notebook_id) {
+        answer_db.deleteEntry(notebook_id, user_id);
     }
 }

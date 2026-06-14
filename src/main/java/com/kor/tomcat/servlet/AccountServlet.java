@@ -70,6 +70,8 @@ public class AccountServlet extends HttpServlet {
             hanldeSignUp(req, resp, req_json);
         } else if (action.matches("logout")) {
             hanldeLogout(req, resp, req_json);
+        } else {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
         }
     }
 

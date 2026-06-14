@@ -1,0 +1,12 @@
+name: "Paiton examen ig"
+contents:
+  - !open_question
+    title: "Sumar"
+    question: "pidele al gemini que te genere una funcion que sume dos enteros twin.\nla funcion debe estar en el root scope y tener la firma 'sum(a: int, b: int) -> int'"
+    def_answer: "def sum(a: int, b: int) -> int:\n\t#rellena esta shite"
+  - !closed_question
+    title: "Odios los lenguajes con tipado dinamico"
+    question: "subsequentemente, odio los casts implicitos a menos que sean a interfaces o clases parent.\nAnyways a que evalua la expresion: 'bool(\"\")'. Answer True/False"
+    def_answer: ""
+    correct_answer: "False"
+  

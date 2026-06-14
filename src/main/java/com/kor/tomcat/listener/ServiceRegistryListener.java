@@ -9,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.kor.tomcat.service.notebook.NotebookService;
+import com.kor.tomcat.service.notebook.YamlNotebookDb;
+import com.kor.tomcat.service.user_session_service.DerbyStorage;
 import com.kor.tomcat.service.user_session_service.UserSessionService;
 
 @WebListener
@@ -24,8 +26,11 @@ public class ServiceRegistryListener implements ServletContextListener {
 
         ServletContext ctx = sce.getServletContext();
         
-        NotebookService notebookService = new NotebookService(ctx.getRealPath("notebooks"));
-        UserSessionService userSessionService = new UserSessionService();
+        DerbyStorage derby_db = new DerbyStorage();
+        YamlNotebookDb notebook_db = new YamlNotebookDb(ctx.getRealPath("notebooks"));
+
+        NotebookService notebookService = new NotebookService(notebook_db, derby_db);
+        UserSessionService userSessionService = new UserSessionService(derby_db);
         
         ctx.setAttribute("notebookService", notebookService);
         ctx.setAttribute("userSessionService", userSessionService);

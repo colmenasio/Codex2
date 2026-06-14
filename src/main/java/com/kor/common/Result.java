@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+// This implementation has some stuff that sucks but meh
 public class Result<T, E> {
     private final T value;
     private final E error;
@@ -59,14 +60,13 @@ public class Result<T, E> {
         return Result.err(error);
     }
 
-    public <U> Result<U, E> flatMap(Function<? super T, Result<U, E>> mapper) {
-        if (isOk) return mapper.apply(value);
-        return Result.err(error);
-    }
-
-    public <F> Result<T, F> mapErr(Function<? super E, ? extends F> mapper) {
-        if (isOk) return Result.ok(value);
-        return Result.err(mapper.apply(error));
+    public <A> A flatten(java.util.function.Function<T, A> onOk, 
+                        java.util.function.Function<E, A> onError) {
+        if (isOk) {
+            return onOk.apply(value);
+        } else {
+            return onError.apply(error);
+        }
     }
 
     public void onSuccess(Consumer<? super T> consumer) {

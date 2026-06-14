@@ -56,6 +56,9 @@
             <div class="progress-indicator">
                 <span id="answeredCount">0</span> of <%= questions.size() %> questions answered
             </div>
+                <button type="button" class="clear-btn" onclick="clearAnswers()">
+                    Clear all Answers
+                </button>
         </div>
 
         <form id="testForm" method="post" action="submitTest">
@@ -63,7 +66,7 @@
                 <%
                     int index = 0;
                     for (IQuestion q : questions) {
-                        String questionId = "q" + index;
+                        String questionId = "question" + index;
                         String defaultAnswer = (q.getDefaultAnswer() != null) ? q.getDefaultAnswer() : "";
                 %>
                 <div class="question-card" data-question-id="<%= questionId %>">
@@ -101,9 +104,6 @@
                     <div class="question-actions">
                         <button type="button" class="submit-question-btn" onclick="submitQuestion('<%= questionId %>')">
                             Submit Answer
-                        </button>
-                        <button type="button" class="clear-btn" onclick="clearAnswer('<%= questionId %>')">
-                            Clear
                         </button>
                     </div>
                     

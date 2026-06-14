@@ -10,8 +10,8 @@ public class UserSessionService {
 
     private IUserSessionStorage user_db;
 
-    public UserSessionService(){
-        user_db = new DerbyUserSessionStorage();
+    public UserSessionService(IUserSessionStorage storage){
+        user_db = storage; 
     }
 
     // ========== ACCOUNT CREATION ==========
@@ -120,15 +120,9 @@ public class UserSessionService {
         return Result.ok(new AuthOk(user));
     }
 
-    //public UserData getUserData(String token) {
-    //    return user_db.getSessionUserData(token);
-    //}
-
     public UserEntry getUserDataById(Long user_id) {
         return user_db.getUserById(user_id);
     }
-
-
 
     private String hash(String input){
         try{

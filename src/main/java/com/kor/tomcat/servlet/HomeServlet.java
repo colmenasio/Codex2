@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.kor.tomcat.service.notebook.NotebookListing;
 import com.kor.tomcat.service.notebook.NotebookService;
+import com.kor.tomcat.service.notebook.YamlNotebookDb;
 import com.kor.tomcat.service.user_session_service.UserSessionService;
 
 @WebServlet(urlPatterns = "/home/*")
@@ -56,7 +57,7 @@ public class HomeServlet extends HttpServlet {
             throws ServletException, IOException {
         Long user_id = (Long) req.getSession().getAttribute("userId");
         String currentUser = usr_service.getUserDataById(user_id).data.username;
-        ArrayList<NotebookListing> notebooks = nb_service.listNotebooks();
+        ArrayList<NotebookListing> notebooks = nb_service.getNotebookDb().listNotebooks();
 
         req.setAttribute("notebooks", notebooks);
         req.setAttribute("currentUser", currentUser);

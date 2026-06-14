@@ -11,5 +11,9 @@ public interface IQuestion {
     class AnswerRight {}
     class AnswerWrong {
         public String why;
+
+        public AnswerWrong(String why_){
+            this.why = why_;
+        }
     }
 }

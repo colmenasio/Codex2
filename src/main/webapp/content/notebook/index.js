@@ -60,46 +60,46 @@ function submitQuestion(questionId) {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
-    // Simulate AJAX submission (in real app, this would send to server)
     setTimeout(() => {
-        // Create FormData for submission
-        const formData = new FormData();
-        formData.append('questionId', questionId);
-        formData.append('answer', answer);
-        formData.append('questionTitle', questionTitle);
 
-        // Simulate successful submission
-        showFeedback(feedbackDiv, 'Answer submitted successfully! ✓', 'success');
+        const payload = {
+            action: "submit_answer",
+            authToken: localStorage.getItem("authToken"),
+            questionId: parseInt(questionId.replace("question", "")),
+            answer: answer
+        };
 
-        // Mark as submitted (add visual indicator)
-        questionCard.classList.add('submitted');
-
-        // Re-enable button
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-
-        // In a real application, you would make an AJAX call here:
-        /*
-        fetch('submitAnswer', {
+        fetch(window.location.pathname, {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showFeedback(feedbackDiv, 'Answer submitted successfully!', 'success');
-            } else {
-                showFeedback(feedbackDiv, 'Error submitting answer. Please try again.', 'error');
-            }
-        })
-        .catch(error => {
-            showFeedback(feedbackDiv, 'Network error. Please check your connection.', 'error');
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-        });
-        */
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok !== true || data.is_correct == undefined) {
+                    console.log(data.error_msg == undefined ? "Unknown error" : data.error_msg);
+                }
+                if (data.is_correct === true) {
+                    showFeedback(feedbackDiv, 'Good Answer Nephew!', 'success');
+                    questionCard.classList.add('submitted');
+                    questionCard.classList.remove('wrong');
+                } else {
+                    showFeedback(feedbackDiv, data.correction_msg === undefined ? '[LOUD INCORRECT BUZZER]' : data.correction_msg, 'error');
+                    questionCard.classList.add('wrong');
+                    questionCard.classList.add('submitted');
+                }
+            })
+            .catch(error => {
+                showFeedback(feedbackDiv, 'Unknown error', 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+
     }, 500);
 }
 
@@ -115,36 +115,55 @@ function clearAnswer(questionId) {
         // Remove submitted class from card
         const questionCard = document.querySelector(`[data-question-id="${questionId}"]`);
         questionCard.classList.remove('submitted');
+        questionCard.classList.remove('wrong');
 
         // Clear feedback
         feedbackDiv.innerHTML = '';
         feedbackDiv.className = 'submission-feedback';
-
-        // Show temporary clear message
-        showFeedback(feedbackDiv, 'Answer cleared', 'info');
-        setTimeout(() => {
-            if (feedbackDiv.innerHTML === 'Answer cleared') {
-                feedbackDiv.innerHTML = '';
-                feedbackDiv.className = 'submission-feedback';
-            }
-        }, 2000);
     }
+}
+
+function clearAnswers() {
+    setTimeout(() => {
+
+        const payload = {
+            action: "delete_stored_answers",
+            authToken: localStorage.getItem("authToken"),
+        };
+
+        fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok !== true) {
+                    console.log(data.error_msg == undefined ? "Unknown error" : data.error_msg);
+                }
+                for (let i = 0; i < totalQuestions; i++) {
+                    clearAnswer("question" + i);
+                }
+            })
+            .catch(error => {
+                showFeedback(feedbackDiv, 'Unknown error', 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+
+    }, 500);
+
 }
 
 // Show feedback message
 function showFeedback(element, message, type) {
     element.innerHTML = message;
     element.className = 'submission-feedback ' + type;
-
-    // Auto-hide success/error messages after 5 seconds
-    if (type !== 'info') {
-        setTimeout(() => {
-            if (element.innerHTML === message) {
-                element.innerHTML = '';
-                element.className = 'submission-feedback';
-            }
-        }, 5000);
-    }
 }
 
 // Handle logout
@@ -166,50 +185,80 @@ async function handleLogout() {
             });
             window.location.href = '/login/signin';
         } catch (e) {
-
+            return;
         }
     }
 }
 
-// Auto-save answers to localStorage
-function autoSaveAnswers() {
-    const textareas = document.querySelectorAll('.answer-textbox');
-    const answers = {};
+async function loadSavedAnswers() {
+    const payload = {
+        action: "request_stored_answers",
+        authToken: localStorage.getItem("authToken"),
+    };
 
-    textareas.forEach(textarea => {
-        answers[textarea.id] = textarea.value;
-    });
-
-    localStorage.setItem('codex2_answers', JSON.stringify(answers));
-    localStorage.setItem('codex2_timestamp', new Date().toISOString());
-}
-
-// Load saved answers from localStorage
-function loadSavedAnswers() {
-    const savedAnswers = localStorage.getItem('codex2_answers');
-    if (savedAnswers) {
-        const answers = JSON.parse(savedAnswers);
-        for (const [id, value] of Object.entries(answers)) {
-            const textarea = document.getElementById(id);
-            if (textarea && value) {
-                textarea.value = value;
-                updateAnswerStatus(id);
+    fetch(window.location.pathname, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok !== true) {
+                console.log(data.error_msg || "Failed to load saved answers");
+                return;
             }
-        }
-    }
+
+            if (data.data && typeof data.data === 'object') {
+                for (const [questionNumber, answerData] of Object.entries(data.data)) {
+                    const questionId = `question${questionNumber}`;
+                    const textarea = document.getElementById(questionId);
+
+                    if (textarea && answerData.raw_answer) {
+                        textarea.value = answerData.raw_answer;
+
+                        updateAnswerStatus(questionId);
+
+                        const questionCard = document.querySelector(`[data-question-id="${questionId}"]`);
+                        if (questionCard && answerData.is_correct === true) {
+                            questionCard.classList.add('submitted');
+
+                            const statusSpan = document.getElementById(`status-${questionId}`);
+                            if (statusSpan) {
+                                statusSpan.textContent = "Answered (correct)";
+                                statusSpan.className = "answer-status answered correct";
+                            }
+                        } else if (questionCard && answerData.raw_answer && answerData.raw_answer.trim()) {
+                            // Answer exists but was incorrect
+                            questionCard.classList.add('wrong');
+                            const statusSpan = document.getElementById(`status-${questionId}`);
+                            if (statusSpan) {
+                                statusSpan.textContent = "Answered (needs review)";
+                                statusSpan.className = "answer-status not-answered needs-review";
+                            }
+                        }
+                    }
+                }
+                updateOverallProgress();
+                console.log(`Loaded ${Object.keys(data.data).length} saved answers`);
+            }
+        })
+        .catch(error => {
+            console.error("Error loading saved answers:", error);
+        });
 }
 
-// Auto-save every 30 seconds
-setInterval(autoSaveAnswers, 30000);
+async function forget_answers() {
+    // TODO mandar un request que borre la entrada de la dabeis
+}
 
-// Save on page unload
-window.addEventListener('beforeunload', () => {
-    autoSaveAnswers();
-});
+setInterval(updateOverallProgress, 1000);
 
 // Load saved answers when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    loadSavedAnswers();
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadSavedAnswers();
     updateOverallProgress();
 
     // Add keyboard shortcut (Ctrl+Enter to submit current question)
