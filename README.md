@@ -14,5 +14,5 @@ Note that some features (like python notebook correction only work when running 
 gradlew.bat run
 ```
 
-> [!WARN]
-> La correcion automatica de preguntas de python no esta sanboxeada y es trivial explotarlo.
+> [!WARNING]
+> The automated correction on python questions is NOT sanboxed and exploiting that is trivial af
