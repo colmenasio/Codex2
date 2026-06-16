@@ -1,23 +1,18 @@
-# Tomcat Gradle Docker App
+# Codex2
 
-This project is a starter web application using Apache Tomcat 9, Gradle, and Docker.
+Codex again
 
 ## Build and Run
 
-```bash
-./gradlew clean war
-./gradlew run
-```
-
-### Docker
+Note that some features (like python notebook correction only work when running the server on an POSIX compliant OS (aka not Windows))
 
 ```bash
-docker build -t tomcat-gradle-app .
-docker run -p 8080:8080 tomcat-gradle-app
+.gradlew run
 ```
 
-### Docker Compose
-
-```bash
-docker-compose up --build
+```bat
+gradlew.bat run
 ```
+
+> [!WARN]
+> La correcion automatica de preguntas de python no esta sanboxeada y es trivial explotarlo.

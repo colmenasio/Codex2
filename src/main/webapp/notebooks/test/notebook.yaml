@@ -1,10 +1,10 @@
-name: "Testeo Lmao"
+name: "Testeo y tal"
 contents:
   - !open_question
-    title: "Question A"
+    title: "Question 1"
     question: "whats 2+2-1 lmao"
     def_answer: "answer_here"
   
   - !open_question
-    title: "fucking magnets"
+    title: "freaking magnets"
     question: "how do they work"
